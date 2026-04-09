@@ -1,0 +1,40 @@
+syntax = "proto3";
+package guardian;
+
+// GuardianIngest receives signed event batches from Guardian agents.
+service GuardianIngest {
+  rpc StreamEvents(stream EventBatch) returns (Ack);
+}
+
+// EventBatch is the unit of transmission — a signed slice of the event chain.
+message EventBatch {
+  string           agent_id  = 1;  // UUID of the originating Guardian installation
+  string           signature = 2;  // HMAC-SHA256 over prev+this hashes of all events
+  repeated Event   events    = 3;
+}
+
+// Event mirrors agent/generator.py:RawEvent exactly.
+message Event {
+  string  timestamp    = 1;   // ISO 8601, nanosecond precision, e.g. 2026-04-09T12:00:00.000000000Z
+  int32   pid          = 2;   // Process ID
+  string  process      = 3;   // Process name (python, torchserve, …)
+  string  syscall      = 4;   // Syscall name (read, write, openat, …)
+  string  fd_path      = 5;   // File path for file syscalls, empty otherwise
+  int64   bytes        = 6;   // Bytes transferred
+  string  return_val   = 7;   // "0" for success or errno string e.g. "-13"
+  int32   uid          = 8;   // Linux user ID
+  string  prev_hash    = 9;   // SHA-256 of previous event (chain link)
+  string  this_hash    = 10;  // SHA-256 of this event (chain link)
+  string  agent_id     = 11;  // UUID of Guardian installation (redundant for per-event indexing)
+  string  model_name   = 12;  // From guardian.yaml watch list
+  string  container_id = 13;  // Docker short ID (12 chars)
+  string  pod_name     = 14;  // Kubernetes pod name
+  string  namespace    = 15;  // Kubernetes namespace
+  string  network_addr = 16;  // IP:port for network syscalls, empty otherwise
+}
+
+// Ack is returned by viriato-platform after receiving a batch.
+message Ack {
+  bool   received      = 1;
+  int32  events_stored = 2;
+}
