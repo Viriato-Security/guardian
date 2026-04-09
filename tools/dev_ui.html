@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guardian Dev UI — Viriato Security</title>
+<style>
+/* ===== Reset & Variables ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #0c0c0f;
+  --surf:     #111115;
+  --surf2:    #18181e;
+  --surf3:    #1e1e26;
+  --border:   #26262f;
+  --border2:  #32323d;
+  --text:     #d4d4d8;
+  --muted:    #606070;
+  --accent:   #3b82f6;
+  --green:    #22c55e;
+  --red:      #ef4444;
+  --yellow:   #f59e0b;
+  --purple:   #a78bfa;
+  --mono:     'SF Mono','Fira Code','Cascadia Code',Consolas,'Courier New',monospace;
+  --sans:     -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --r:        6px;
+}
+
+body { font-family: var(--sans); background: var(--bg); color: var(--text);
+       min-height: 100vh; display: flex; flex-direction: column; }
+
+/* ===== Header ===== */
+header {
+  background: var(--surf);
+  border-bottom: 1px solid var(--border);
+  padding: 11px 24px;
+  display: flex; align-items: center; gap: 14px;
+  flex-shrink: 0;
+}
+.logo { font-size: 17px; font-weight: 700; color: #fff; letter-spacing: -.3px; }
+.logo em { color: var(--accent); font-style: normal; }
+.tagline { font-size: 12px; color: var(--muted); border-left: 1px solid var(--border);
+           padding-left: 14px; }
+.hdr-status { margin-left: auto; display: flex; align-items: center; gap: 8px;
+              font-size: 12px; color: var(--muted); }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted);
+       transition: background .3s, box-shadow .3s; }
+.dot.on { background: var(--green); box-shadow: 0 0 8px var(--green);
+          animation: pulse 2s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.45} }
+
+/* ===== Tab bar ===== */
+.tabbar {
+  background: var(--surf);
+  border-bottom: 1px solid var(--border);
+  display: flex; padding: 0 24px; gap: 2px; flex-shrink: 0;
+}
+.tbtn {
+  background: none; border: none; border-bottom: 2px solid transparent;
+  color: var(--muted); cursor: pointer; font-family: var(--sans); font-size: 13px;
+  padding: 11px 16px; margin-bottom: -1px; transition: color .15s, border-color .15s;
+  letter-spacing: .1px;
+}
+.tbtn:hover { color: var(--text); }
+.tbtn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* ===== Main ===== */
+main { flex: 1; padding: 20px 24px; max-width: 1280px; width: 100%; margin: 0 auto; }
+.panel { display: none; } .panel.active { display: block; }
+
+/* ===== Card ===== */
+.card {
+  background: var(--surf); border: 1px solid var(--border); border-radius: var(--r);
+  padding: 18px 20px; margin-bottom: 14px;
+}
+.card-title {
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px;
+  color: var(--muted); margin-bottom: 14px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+
+/* ===== Buttons ===== */
+.btn {
+  background: var(--surf2); border: 1px solid var(--border2); border-radius: var(--r);
+  color: var(--text); cursor: pointer; font-family: var(--sans); font-size: 13px;
+  padding: 7px 14px; transition: background .12s, border-color .12s; white-space: nowrap;
+}
+.btn:hover:not(:disabled) { background: var(--surf3); border-color: #42424f; }
+.btn:disabled { opacity: .35; cursor: not-allowed; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.primary:hover:not(:disabled) { background: #2563eb; border-color: #2563eb; }
+.btn.go { background: rgba(34,197,94,.12); border-color: var(--green); color: var(--green); }
+.btn.go:hover:not(:disabled) { background: rgba(34,197,94,.2); }
+.btn.stop { background: transparent; border-color: var(--red); color: var(--red); }
+.btn.stop:hover:not(:disabled) { background: rgba(239,68,68,.1); }
+.btn-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.btn-sm { font-size: 11px; padding: 3px 9px; border-radius: 4px; }
+
+/* ===== Form ===== */
+.fg { margin-bottom: 13px; }
+label { display: block; font-size: 11px; font-weight: 700; letter-spacing: .5px;
+        text-transform: uppercase; color: var(--muted); margin-bottom: 5px; }
+input[type=text], input[type=number], select, textarea {
+  background: var(--bg); border: 1px solid var(--border2); border-radius: var(--r);
+  color: var(--text); font-family: var(--sans); font-size: 13px;
+  padding: 7px 11px; width: 100%; transition: border-color .12s;
+}
+input:focus, select:focus, textarea:focus
+  { border-color: var(--accent); outline: none; }
+select option { background: var(--surf2); }
+textarea { font-family: var(--mono); font-size: 11.5px; resize: vertical; min-height: 160px; }
+input[type=range] { width: 100%; accent-color: var(--accent); margin-top: 4px; }
+.fgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 18px; }
+@media(max-width:640px){ .fgrid{ grid-template-columns:1fr } }
+
+/* ===== Log area ===== */
+.logwrap { position: relative; }
+.logarea {
+  background: #07070c; border: 1px solid var(--border); border-radius: var(--r);
+  font-family: var(--mono); font-size: 11.5px; height: 420px;
+  overflow-y: auto; padding: 10px 12px; line-height: 1.55;
+}
+.ll { white-space: pre-wrap; word-break: break-all; }
+.ll.al  { color: #ff6b6b; font-weight: 600; background: rgba(255,90,90,.06); padding: 0 2px; }
+.ll.bat { color: #4ade80; }
+.ll.err { color: var(--red); }
+.ll.wrn { color: var(--yellow); }
+.ll.dbg { color: #44445a; }
+.ll.inf { color: var(--text); }
+.ll.sys { color: var(--muted); font-style: italic; }
+
+/* ===== Stats bar ===== */
+.stats { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 10px; font-size: 12px; }
+.stat  { display: flex; gap: 5px; color: var(--muted); align-items: center; }
+.stat b { font-family: var(--mono); color: var(--text); font-weight: 600; }
+.stat b.al-val { color: var(--red); }
+
+/* ===== Code/response ===== */
+.codebox {
+  background: #07070c; border: 1px solid var(--border); border-radius: var(--r);
+  font-family: var(--mono); font-size: 11.5px; max-height: 460px;
+  overflow: auto; padding: 12px 14px; white-space: pre;
+}
+.codebox.ph { color: var(--muted); font-style: italic; white-space: normal; }
+
+/* JSON syntax highlighting */
+.jk { color: #7dd3fc; } /* key   */
+.js { color: #86efac; } /* string */
+.jn { color: #fbbf24; } /* number */
+.jb { color: #f472b6; } /* bool  */
+.jx { color: #94a3b8; } /* null  */
+
+/* ===== gRPC ack box ===== */
+.ack {
+  border-radius: var(--r); padding: 11px 14px; margin-bottom: 12px;
+  font-size: 13px; display: flex; flex-direction: column; gap: 5px;
+}
+.ack.ok   { background: rgba(34,197,94,.08);  border: 1px solid rgba(34,197,94,.35); }
+.ack.fail { background: rgba(239,68,68,.08);  border: 1px solid rgba(239,68,68,.35); }
+.ack .headline { font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.ack.ok   .headline { color: var(--green); }
+.ack.fail .headline { color: var(--red); }
+.ack .detail { color: var(--muted); font-size: 12px; line-height: 1.5; }
+.ack .mono   { font-family: var(--mono); color: var(--yellow); font-size: 11px; }
+
+/* ===== Verify ===== */
+.verdict {
+  border-radius: var(--r); padding: 11px 16px; margin-bottom: 12px;
+  font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 10px;
+}
+.verdict.ok   { background: rgba(34,197,94,.1);  border: 1px solid var(--green); color: var(--green); }
+.verdict.bad  { background: rgba(239,68,68,.1);  border: 1px solid var(--red);   color: var(--red); }
+.verdict sub  { font-size: 12px; font-weight: 400; color: inherit; opacity: .8; margin-left: 2px; }
+
+.evlist { display: flex; flex-direction: column; gap: 3px; max-height: 380px; overflow-y: auto; }
+.evrow {
+  display: grid; grid-template-columns: 22px 52px 1fr 1fr auto;
+  gap: 8px; align-items: center;
+  background: var(--surf2); border: 1px solid var(--border); border-radius: 4px;
+  padding: 5px 10px; font-family: var(--mono); font-size: 11px;
+}
+.evrow.ok  { border-left: 3px solid var(--green); }
+.evrow.bad { border-left: 3px solid var(--red);   }
+.ev-icon { text-align: center; }
+.ev-idx  { color: var(--muted); }
+.ev-hash { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ev-prev { color: #555570; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; }
+.ev-status { font-size: 10px; white-space: nowrap; }
+.evrow.ok  .ev-status { color: var(--green); }
+.evrow.bad .ev-status { color: var(--red);   }
+
+/* ===== Footer ===== */
+footer {
+  background: var(--surf); border-top: 1px solid var(--border);
+  padding: 5px 24px; display: flex; align-items: center; gap: 14px;
+  font-size: 11px; color: var(--muted); flex-shrink: 0;
+}
+footer .sep { color: var(--border2); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #444455; }
+
+.help { font-size: 12px; color: var(--muted); margin-top: 8px; line-height: 1.6; }
+
+/* split layout for tab 2 */
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media(max-width:800px){ .split{ grid-template-columns:1fr } }
+
+.spinner { display: none; font-size: 12px; color: var(--muted); margin-left: 4px; }
+</style>
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<header>
+  <div class="logo">Guardian <em>Dev UI</em></div>
+  <div class="tagline">Viriato Security — local pipeline tester</div>
+  <div class="hdr-status">
+    <div class="dot" id="dot"></div>
+    <span id="hdr-txt">Agent stopped</span>
+  </div>
+</header>
+
+<!-- ===== TAB BAR ===== -->
+<div class="tabbar">
+  <button class="tbtn active" onclick="switchTab('run',this)">▶&nbsp; Run Agent</button>
+  <button class="tbtn"        onclick="switchTab('grpc',this)">⚡&nbsp; Test gRPC</button>
+  <button class="tbtn"        onclick="switchTab('verify',this)">🔗&nbsp; Verify Chain</button>
+</div>
+
+<!-- ===== MAIN ===== -->
+<main>
+
+  <!-- ========== TAB 1: Run Agent ========== -->
+  <div class="panel active" id="tab-run">
+
+    <div class="card">
+      <div class="card-title">Agent Controls</div>
+      <div class="btn-row">
+        <button class="btn primary" id="btn-dry"  onclick="startAgent(true)">Start Agent (dry-run)</button>
+        <button class="btn go"      id="btn-live" onclick="startAgent(false)">Start Agent (live)</button>
+        <button class="btn stop"    id="btn-stop" onclick="stopAgent()" disabled>Stop Agent</button>
+        <select id="ll-select" style="width:auto">
+          <option value="DEBUG" selected>DEBUG</option>
+          <option value="INFO">INFO</option>
+          <option value="WARNING">WARNING</option>
+        </select>
+        <span id="pid-label" style="font-size:11px;color:var(--muted);margin-left:2px"></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <span>Log Output</span>
+        <div style="display:flex;gap:10px;align-items:center">
+          <label style="text-transform:none;letter-spacing:0;font-size:12px;
+                        cursor:pointer;display:flex;gap:5px;color:var(--muted);margin:0;font-weight:400">
+            <input type="checkbox" id="asc" checked> Auto-scroll
+          </label>
+          <button class="btn btn-sm" onclick="clearLog()">Clear</button>
+        </div>
+      </div>
+      <div class="logarea" id="log">
+        <span class="ll sys">— waiting for agent start —</span>
+      </div>
+      <div class="stats">
+        <div class="stat">Events <b id="s-ev">0</b></div>
+        <div class="stat">Batches <b id="s-bt">0</b></div>
+        <div class="stat">Alerts <b class="al-val" id="s-al">0</b></div>
+        <div class="stat">gRPC sent <b id="s-gs">0</b></div>
+        <div class="stat">Buffered <b id="s-bf">0</b></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ========== TAB 2: Test gRPC ========== -->
+  <div class="panel" id="tab-grpc">
+
+    <div class="split">
+      <div class="card">
+        <div class="card-title">Batch Parameters</div>
+
+        <div class="fgrid">
+          <div class="fg">
+            <label>Endpoint</label>
+            <input type="text" id="g-ep" value="localhost:50051">
+          </div>
+          <div class="fg">
+            <label>Model name</label>
+            <input type="text" id="g-model" value="patient-diagnosis-v2">
+          </div>
+        </div>
+
+        <div class="fg">
+          <label>Agent ID</label>
+          <div style="display:flex;gap:6px">
+            <input type="text" id="g-aid" value="">
+            <button class="btn" onclick="regenUUID()">New UUID</button>
+          </div>
+        </div>
+
+        <div class="fg">
+          <label>Syscall type</label>
+          <select id="g-sc">
+            <option value="read" selected>read</option>
+            <option value="write">write</option>
+            <option value="openat">openat</option>
+            <option value="execve">execve</option>
+            <option value="connect">connect</option>
+            <option value="sendto">sendto</option>
+          </select>
+        </div>
+
+        <div class="fg">
+          <label>
+            Events to generate —
+            <span id="nev-lbl" style="color:var(--accent);font-weight:700">10</span>
+          </label>
+          <input type="range" id="g-n" min="1" max="100" value="10"
+                 oninput="document.getElementById('nev-lbl').textContent=this.value">
+        </div>
+
+        <div class="btn-row">
+          <button class="btn primary" id="btn-send" onclick="sendBatch()">Send Batch</button>
+          <span class="spinner" id="spin">Sending…</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">gRPC Response</div>
+        <div id="g-ack" class="codebox ph">Response will appear here after sending a batch.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <span>Signed Batch JSON</span>
+        <button class="btn btn-sm" onclick="copyEl('g-batch')">Copy</button>
+      </div>
+      <div id="g-batch" class="codebox ph">Full batch JSON will appear here after sending.</div>
+    </div>
+
+  </div>
+
+  <!-- ========== TAB 3: Verify Chain ========== -->
+  <div class="panel" id="tab-verify">
+
+    <div class="card">
+      <div class="card-title">Event Chain Input</div>
+      <div class="fg">
+        <label>JSON array of events — or a full EventBatch object (agent_id, signature, events[])</label>
+        <textarea id="v-input" rows="10"
+          placeholder='[{"timestamp":"2026-04-09T12:00:00.000000000Z","pid":1234,...}]'></textarea>
+      </div>
+      <div class="btn-row">
+        <button class="btn primary" onclick="verifyChain()">Verify Chain</button>
+        <button class="btn"         onclick="loadFromBuffer()">Load from buffer</button>
+        <button class="btn"         onclick="document.getElementById('v-input').value='';document.getElementById('v-result').style.display='none'">Clear</button>
+      </div>
+      <div class="help">
+        SHA-256 hashes are recomputed client-side in the browser.
+        No event data is sent anywhere — all verification is local.
+        Tip: after sending a batch in Tab 2, the events are auto-loaded here.
+      </div>
+    </div>
+
+    <div id="v-result" style="display:none"></div>
+
+  </div>
+
+</main>
+
+<!-- ===== FOOTER ===== -->
+<footer>
+  <span>Guardian Dev Server</span>
+  <span class="sep">|</span>
+  <span>http://localhost:8765</span>
+  <span class="sep">|</span>
+  <span id="footer-msg">Idle</span>
+</footer>
+
+<script>
+'use strict';
+
+// ============================================================
+// Constants
+// ============================================================
+const GENESIS = '0'.repeat(64);
+
+// ============================================================
+// Tab switching
+// ============================================================
+function switchTab(name, el) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tbtn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  el.classList.add('active');
+}
+
+// ============================================================
+// Status polling
+// ============================================================
+let _prevRunning = false;
+
+async function pollStatus() {
+  try {
+    const r = await fetch('/api/status');
+    if (!r.ok) return;
+    const s = await r.json();
+    const running = !!s.running;
+
+    document.getElementById('dot').className = 'dot' + (running ? ' on' : '');
+    document.getElementById('hdr-txt').textContent = running ? 'Agent running' : 'Agent stopped';
+
+    if (_prevRunning && !running) {
+      // Just stopped — sync button state
+      setCtrl(false);
+      appendLog('— agent process ended —', 'sys');
+    }
+    _prevRunning = running;
+
+    // Refresh stats (live updates while running, final values after stop)
+    const map = {events:'s-ev', batches:'s-bt', alerts:'s-al', grpc_sent:'s-gs', buffered:'s-bf'};
+    for (const [k, id] of Object.entries(map)) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = s[k] ?? 0;
+    }
+  } catch {
+    setFooter('Dev server unreachable — is python tools/dev_server.py running?');
+  }
+}
+
+setInterval(pollStatus, 1000);
+
+// ============================================================
+// Utilities
+// ============================================================
+function setFooter(msg) {
+  document.getElementById('footer-msg').textContent = msg;
+}
+
+function flash(msg) {
+  setFooter(msg);
+  setTimeout(() => setFooter('Idle'), 2500);
+}
+
+function esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+function copyEl(id) {
+  const el = document.getElementById(id);
+  navigator.clipboard.writeText(el.textContent || el.innerText)
+    .then(() => flash('Copied to clipboard ✓'))
+    .catch(() => flash('Copy failed — check browser permissions'));
+}
+
+// ============================================================
+// TAB 1 — Run Agent
+// ============================================================
+let _sse = null;
+
+function setCtrl(running) {
+  document.getElementById('btn-dry').disabled  = running;
+  document.getElementById('btn-live').disabled = running;
+  document.getElementById('btn-stop').disabled = !running;
+}
+
+function clearLog() {
+  document.getElementById('log').innerHTML = '';
+}
+
+function appendLog(line, forceClass) {
+  const el = document.createElement('div');
+  el.className = 'll ' + (forceClass || classifyLine(line));
+  el.textContent = line;
+  const area = document.getElementById('log');
+  area.appendChild(el);
+  if (document.getElementById('asc').checked) area.scrollTop = area.scrollHeight;
+}
+
+function classifyLine(line) {
+  if (line.includes('ALERT'))                return 'al';
+  if (line.includes('batch ready') ||
+      line.includes('DRY RUN: batch'))       return 'bat';
+  if (line.includes(' ERROR '))              return 'err';
+  if (line.includes(' WARNING '))            return 'wrn';
+  if (line.includes(' DEBUG '))              return 'dbg';
+  return 'inf';
+}
+
+async function startAgent(dryRun) {
+  clearLog();
+  setCtrl(true);
+  document.getElementById('pid-label').textContent = '';
+  _prevRunning = false;
+
+  const logLevel = document.getElementById('ll-select').value;
+
+  let data;
+  try {
+    const r = await fetch('/api/run-agent', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ dry_run: dryRun, log_level: logLevel }),
+    });
+    data = await r.json();
+    if (!r.ok) {
+      appendLog('ERROR: ' + (data.error || 'Failed to start'), 'err');
+      setCtrl(false);
+      return;
+    }
+  } catch (e) {
+    appendLog('ERROR: Cannot reach dev server — ' + e.message, 'err');
+    setCtrl(false);
+    return;
+  }
+
+  document.getElementById('pid-label').textContent = `PID ${data.pid}`;
+  appendLog(
+    `Agent started — PID ${data.pid}  mode=${dryRun ? 'dry-run' : 'LIVE'}  log=${logLevel}`,
+    'sys'
+  );
+
+  // Open SSE stream
+  if (_sse) { _sse.close(); }
+  _sse = new EventSource('/api/stream-agent');
+
+  _sse.onmessage = ev => {
+    const d = JSON.parse(ev.data);
+    appendLog(d.line);
+  };
+
+  _sse.addEventListener('done', () => {
+    _sse.close();
+    _sse = null;
+    setCtrl(false);
+    _prevRunning = false;
+    appendLog('— log stream closed —', 'sys');
+  });
+
+  _sse.onerror = () => {
+    // Only log if we thought we were running to avoid noise on normal shutdown
+    if (document.getElementById('btn-stop').disabled === false) {
+      appendLog('— log stream interrupted —', 'sys');
+    }
+  };
+}
+
+async function stopAgent() {
+  try {
+    const r = await fetch('/api/stop-agent', { method: 'POST' });
+    const d = await r.json();
+    if (!r.ok) {
+      appendLog('ERROR: ' + (d.error || 'Stop failed'), 'err');
+    } else {
+      appendLog('SIGTERM sent — waiting for shutdown…', 'sys');
+    }
+  } catch (e) {
+    appendLog('ERROR: ' + e.message, 'err');
+  }
+}
+
+// ============================================================
+// TAB 2 — Test gRPC
+// ============================================================
+function regenUUID() {
+  document.getElementById('g-aid').value = crypto.randomUUID();
+}
+
+async function sendBatch() {
+  const btn    = document.getElementById('btn-send');
+  const spin   = document.getElementById('spin');
+  const ackEl  = document.getElementById('g-ack');
+  const batchEl= document.getElementById('g-batch');
+  btn.disabled = true;
+  spin.style.display = 'inline';
+  ackEl.className  = 'codebox ph';
+  ackEl.innerHTML  = 'Sending…';
+  batchEl.className= 'codebox ph';
+  batchEl.innerHTML= '';
+
+  try {
+    const r = await fetch('/api/send-batch', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        endpoint:   document.getElementById('g-ep').value.trim(),
+        agent_id:   document.getElementById('g-aid').value.trim(),
+        model_name: document.getElementById('g-model').value.trim(),
+        n_events:   parseInt(document.getElementById('g-n').value),
+        syscall:    document.getElementById('g-sc').value,
+      }),
+    });
+
+    const data = await r.json();
+
+    if (!r.ok) {
+      ackEl.className = 'codebox';
+      ackEl.textContent = 'Error ' + r.status + ': ' + (data.error || 'unknown');
+      return;
+    }
+
+    const g = data.grpc || {};
+
+    // Build ACK display
+    ackEl.className = 'ack ' + (g.sent ? 'ok' : 'fail');
+    if (g.sent) {
+      const ack = g.ack || {};
+      ackEl.innerHTML = `
+        <div class="headline">✓ gRPC SEND OK</div>
+        <div class="detail">
+          <b>received:</b> ${ack.received}
+          &nbsp;·&nbsp;
+          <b>events_stored:</b> ${ack.events_stored}
+        </div>
+        <div class="detail"><b>n_events:</b> ${esc(data.n_events)}</div>
+        <div class="detail"><b>agent_id:</b> ${esc(data.agent_id)}</div>
+        <div class="detail"><b>signature:</b></div>
+        <div class="mono">${esc(data.signature)}</div>
+      `;
+    } else {
+      ackEl.innerHTML = `
+        <div class="headline">✗ gRPC SEND FAILED</div>
+        <div class="detail" style="white-space:pre-wrap;font-size:11px">${esc(g.error || 'unknown error')}</div>
+        <div class="detail" style="margin-top:6px">
+          Batch was signed locally but not delivered.
+          ${g.error && g.error.includes('proto') ? 'Run <code>bash scripts/gen_proto.sh</code> to generate stubs.' : ''}
+        </div>
+        <div class="detail"><b>n_events:</b> ${esc(data.n_events)} &nbsp;·&nbsp; <b>agent_id:</b> ${esc(data.agent_id)}</div>
+        <div class="detail"><b>signature:</b></div>
+        <div class="mono">${esc(data.signature)}</div>
+      `;
+    }
+
+    // Batch JSON
+    batchEl.className = 'codebox';
+    const batchObj = { agent_id: data.agent_id, signature: data.signature, events: data.events };
+    batchEl.innerHTML = jsonHL(JSON.stringify(batchObj, null, 2));
+
+    // Auto-load events into the verify tab
+    document.getElementById('v-input').value = JSON.stringify(data.events, null, 2);
+    document.getElementById('v-result').style.display = 'none';
+    flash('Batch sent — events loaded into Verify Chain tab');
+
+  } catch (e) {
+    ackEl.className = 'codebox';
+    ackEl.textContent = 'Fetch error: ' + e.message;
+  } finally {
+    btn.disabled = false;
+    spin.style.display = 'none';
+  }
+}
+
+// ============================================================
+// TAB 3 — Verify Chain (client-side SHA-256)
+// ============================================================
+async function loadFromBuffer() {
+  flash('Loading events from pending.jsonl…');
+  try {
+    // We don't have a direct file read endpoint, but we can load the last
+    // sent batch from the verify input (already auto-populated from Tab 2).
+    const current = document.getElementById('v-input').value.trim();
+    if (current) {
+      flash('Verify tab already has events from the last batch.');
+    } else {
+      flash('Send a batch in Tab 2 first — events auto-populate here.');
+    }
+  } catch (e) {
+    flash('Error: ' + e.message);
+  }
+}
+
+async function verifyChain() {
+  const raw = document.getElementById('v-input').value.trim();
+  const resultEl = document.getElementById('v-result');
+  resultEl.style.display = 'block';
+  resultEl.innerHTML = '<div class="card" style="color:var(--muted)">Verifying…</div>';
+
+  if (!raw) {
+    resultEl.innerHTML = '<div class="card" style="color:var(--red)">No input. Paste a JSON event array or send a batch from Tab 2.</div>';
+    return;
+  }
+
+  let events;
+  try {
+    const parsed = JSON.parse(raw);
+    // Accept both a plain array and an EventBatch object {agent_id, signature, events[]}
+    events = Array.isArray(parsed) ? parsed : (parsed.events || []);
+  } catch (e) {
+    resultEl.innerHTML = `<div class="card" style="color:var(--red)">JSON parse error: ${esc(e.message)}</div>`;
+    return;
+  }
+
+  if (!events.length) {
+    resultEl.innerHTML = '<div class="card" style="color:var(--muted)">No events found in input.</div>';
+    return;
+  }
+
+  const rows = [];
+  let firstFail = -1;
+
+  for (let i = 0; i < events.length; i++) {
+    const ev = events[i];
+    const expectedPrev = i === 0 ? GENESIS : events[i - 1].this_hash;
+    const prevOk   = ev.prev_hash === expectedPrev;
+    const computed = await hashEvent(ev);
+    const hashOk   = ev.this_hash === computed;
+    const ok = prevOk && hashOk;
+
+    let status;
+    if (!prevOk)   status = `prev_hash ≠ events[${i-1}].this_hash`;
+    else if (!hashOk) status = `this_hash mismatch (recomputed ${computed.slice(0,8)}…)`;
+    else           status = 'ok';
+
+    if (!ok && firstFail === -1) firstFail = i;
+    rows.push({ i, ok, status, thisHash: ev.this_hash || '—', prevHash: ev.prev_hash || '—' });
+  }
+
+  const allOk = firstFail === -1;
+
+  let html = `<div class="card">
+    <div class="verdict ${allOk ? 'ok' : 'bad'}">
+      ${allOk ? '✓ CHAIN INTACT' : `✗ CHAIN BROKEN at event ${firstFail}`}
+      <sub>${allOk
+        ? `all ${events.length} events verified`
+        : `events 0–${firstFail > 0 ? firstFail-1 : 0} ok · error at #${firstFail}`
+      }</sub>
+    </div>
+    <div class="evlist">
+  `;
+
+  for (const r of rows) {
+    html += `
+      <div class="evrow ${r.ok ? 'ok' : 'bad'}">
+        <span class="ev-icon">${r.ok ? '✓' : '✗'}</span>
+        <span class="ev-idx">#${r.i}</span>
+        <span class="ev-hash" title="${esc(r.thisHash)}">this: ${r.thisHash.slice(0,14)}…</span>
+        <span class="ev-prev" title="${esc(r.prevHash)}">prev: ${r.prevHash.slice(0,14)}…</span>
+        <span class="ev-status">${esc(r.status)}</span>
+      </div>
+    `;
+  }
+
+  html += '</div></div>';
+  resultEl.innerHTML = html;
+}
+
+// ============================================================
+// SHA-256 mirroring Python signer._hash_event exactly
+// ============================================================
+async function hashEvent(event) {
+  const d = Object.assign({}, event);
+  delete d.this_hash;                         // excluded from hash (same as Python)
+  const serialized = sortedCompact(d);        // sort_keys=True, separators=(",",":")
+  const encoded = new TextEncoder().encode(serialized);
+  const buf = await crypto.subtle.digest('SHA-256', encoded);
+  return Array.from(new Uint8Array(buf))
+    .map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * Produce the same output as Python's:
+ *   json.dumps(obj, sort_keys=True, separators=(",",":"), default=str)
+ *
+ * All RawEvent values are str | int, so this is a straight translation.
+ */
+function sortedCompact(val) {
+  if (val === null || val === undefined) return 'null';
+  if (typeof val === 'boolean')  return val ? 'true' : 'false';
+  if (typeof val === 'number')   return Number.isFinite(val) ? JSON.stringify(val) : 'null';
+  if (typeof val === 'string')   return JSON.stringify(val);
+  if (Array.isArray(val))
+    return '[' + val.map(sortedCompact).join(',') + ']';
+  if (typeof val === 'object') {
+    const keys = Object.keys(val).sort();
+    return '{' + keys.map(k => JSON.stringify(k) + ':' + sortedCompact(val[k])).join(',') + '}';
+  }
+  return JSON.stringify(val);
+}
+
+// ============================================================
+// JSON syntax highlighter
+// ============================================================
+function jsonHL(json) {
+  return esc(json).replace(
+    /("(\\u[a-fA-F0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,
+    m => {
+      if (/^"/.test(m)) return `<span class="${/:$/.test(m) ? 'jk' : 'js'}">${m}</span>`;
+      if (/true|false/.test(m)) return `<span class="jb">${m}</span>`;
+      if (/null/.test(m))       return `<span class="jx">${m}</span>`;
+      return `<span class="jn">${m}</span>`;
+    }
+  );
+}
+
+// ============================================================
+// Init
+// ============================================================
+window.addEventListener('load', () => {
+  regenUUID();
+  pollStatus();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+agent:
+  token: "YOUR_API_TOKEN_FROM_VIRIATO_CONSOLE"
+  control_plane: "grpc.viriatosecurity.com:443"
+  batch_interval_ms: 100
+  buffer_path: "~/.guardian/buffer"       # Linux production: /var/lib/guardian/buffer
+
+watch:
+  - process: "python"
+    model_name: "patient-diagnosis-v2"
+  - process: "torchserve"
+    model_name: "fraud-detection-v1"
+
+syscalls:
+  - read
+  - write
+  - openat
+  - sendto
+  - recvfrom
+  - connect
+  - execve
+  - clone
+  - socket
+
+local_alerts:
+  - type: sandbox_escape
+    condition: "execve matches /bin/bash or /bin/sh"
+    action: log_and_alert
+  - type: unexpected_network
+    condition: "connect to addr not in allowlist"
+    action: log_and_alert
+
+network_allowlist: []
+
+compliance:
+  organization: "Acme Healthcare AI"
+  data_categories:
+    - medical_records
+    - PII
+  articles: [12, 13, 15, 17, 72]
