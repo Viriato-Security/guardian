@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "guardian"
+version = "0.1.0"
+description = "Kernel-level eBPF observability agent for AI systems — Viriato Security"
+requires-python = ">=3.12"
+license = {text = "BUSL-1.1"}
+authors = [
+  {name = "Viriato Security", email = "hello@viriatosecurity.com"},
+]
+dependencies = [
+  "grpcio>=1.62.0",
+  "grpcio-tools>=1.62.0",
+  "pyyaml>=6.0.1",
+  "cryptography>=42.0.0",
+]
+
+[project.scripts]
+guardian = "agent.main:cli_main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "--tb=short"
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+ignore_missing_imports = true
