@@ -196,24 +196,24 @@ def scene_1() -> None:
 
     arch = [
         "    ┌─────────────────────────────────────────────────────────────────┐",
-        "    │                    YOUR AI INFRASTRUCTURE                        │",
-        "    │                                                                  │",
+        "    │                    YOUR AI INFRASTRUCTURE                       │",
+        "    │                                                                 │",
         "    │   ┌─────────────────┐                                           │",
         "    │   │  AI Model       │  patient-diagnosis-v2                     │",
         "    │   │  (python)       │  fraud-detection-v1                       │",
         "    │   └────────┬────────┘                                           │",
-        "    │            │  syscalls (read, write, execve, connect...)         │",
-        "    │            ▼                                                     │",
-        "    │   ┌─────────────────┐    ┌──────────────────────────────────┐  │",
-        "    │   │  eBPF Probe     │───▶│  Guardian Agent                  │  │",
-        "    │   │  (kernel)       │    │  • Enrich  • Chain  • Sign       │  │",
-        "    │   └─────────────────┘    └──────────────┬───────────────────┘  │",
+        "    │            │  syscalls (read, write, execve, connect...)        │",
+        "    │            ▼                                                    │",
+        "    │   ┌─────────────────┐    ┌──────────────────────────────────┐   │",
+        "    │   │  eBPF Probe     │───▶│  Guardian Agent                  │   │",
+        "    │   │  (kernel)       │    │  • Enrich  • Chain  • Sign       │   │",
+        "    │   └─────────────────┘    └──────────────┬───────────────────┘   │",
         "    │                                         │  gRPC + TLS           │",
         "    │                                         ▼                       │",
-        "    │                          ┌──────────────────────────────────┐  │",
-        "    │                          │  viriato-platform                │  │",
-        "    │                          │  EU AI Act Compliance Engine     │  │",
-        "    │                          └──────────────────────────────────┘  │",
+        "    │                          ┌──────────────────────────────────┐   │",
+        "    │                          │  viriato-platform                │   │",
+        "    │                          │  EU AI Act Compliance Engine     │   │",
+        "    │                          └──────────────────────────────────┘   │",
         "    └─────────────────────────────────────────────────────────────────┘",
     ]
     animate_lines(arch, delay=0.03)
@@ -1209,3 +1209,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
