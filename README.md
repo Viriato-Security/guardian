@@ -11,6 +11,17 @@ signs the telemetry cryptographically, and streams it to the Viriato platform fo
 
 ---
 
+## Prerequisites
+
+| Requirement | Notes |
+|-------------|-------|
+| **Python 3.12+** | Required for the userspace agent |
+| **Linux 5.8+ with BTF** | Required for real eBPF probe (Phase 2+). Phase 1 runs on macOS and Linux in fake-event mode. |
+| **gRPC / protobuf** | Installed via `requirements.txt` — no manual steps |
+| **Root / `CAP_BPF`** | Required for loading eBPF programs (Phase 2+). Not needed for Phase 1 dry-run. |
+
+---
+
 ## Architecture
 
 ```
@@ -48,6 +59,57 @@ All intelligence (anomaly detection, compliance mapping, report generation) live
 
 ---
 
+## Repository Layout
+
+```
+guardian/
+├── agent/              # Userspace agent (Python)
+│   ├── main.py         # Entry point — orchestrates the pipeline
+│   ├── config.py       # guardian.yaml loader and schema
+│   ├── reader.py       # eBPF / fake event source selection
+│   ├── generator.py    # Fake event generator (Phase 1)
+│   ├── loader.py       # eBPF loader stub (Phase 2)
+│   ├── enricher.py     # Adds agent_id, model_name, container_id, pod metadata
+│   ├── local_alerts.py # Offline sandbox-escape and network alerts
+│   ├── signer.py       # SHA-256 hash chain + HMAC-SHA256 batch signatures
+│   └── sender.py       # gRPC transport + offline disk buffer
+├── probe/              # eBPF C kernel probe (Phase 2)
+│   ├── guardian.bpf.c  # Tracepoints: read, openat, execve
+│   └── guardian.h      # Shared C structs (guardian_event, ring buffer)
+├── proto/              # gRPC contract
+│   └── guardian.proto  # GuardianIngest service, EventBatch, Event, Ack
+├── tests/              # pytest test suite (63 tests)
+├── tools/              # Developer tooling
+│   ├── dev_server.py   # Local dev UI server (stdlib only)
+│   ├── dev_ui.html     # Browser UI: run agent, test gRPC, verify chains
+│   ├── dev.sh          # One-command launcher for the dev UI
+│   └── demo.py         # Rich terminal demo for presentations
+├── scripts/
+│   └── gen_proto.sh    # Regenerate gRPC stubs from guardian.proto
+├── docs/               # Full technical documentation (12 sections)
+├── guardian.yaml.example
+└── install.sh          # Bootstrap script
+```
+
+---
+
+## Documentation
+
+Full technical docs live in [`docs/`](docs/README.md), covering architecture, data schema, security model, eBPF probes, operations, and more.
+
+| I want to... | Go to |
+|---|---|
+| Understand what Guardian captures | [RawEvent Schema](docs/03-data/raw-event-schema.md) |
+| Understand the hash chain | [Signing & Chain of Custody](docs/04-security/signing.md) |
+| Configure watched processes | [guardian.yaml Reference](docs/12-reference/config-reference.md) |
+| Run without a real kernel | [Fake Event Generator](docs/05-components/generator.md) |
+| See the full pipeline | [Pipeline Walk-Through](docs/05-components/pipeline.md) |
+| Understand Phase 2 plans | [Roadmap](docs/07-phases/roadmap.md) |
+| Compare to Falco / auditd | [Alternatives](docs/11-alternatives/comparison.md) |
+| Deploy on Kubernetes | [Kubernetes Deployment](docs/09-operations/kubernetes.md) |
+
+---
+
 ## Quickstart
 
 ```bash
@@ -55,21 +117,20 @@ All intelligence (anomaly detection, compliance mapping, report generation) live
 git clone https://github.com/Viriato-Security/guardian.git
 cd guardian
 
-# 2. Install dependencies
-pip install -r requirements.txt
+# 2. Create a virtual environment
+python3 -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
 
-# 3. Generate gRPC stubs
-bash scripts/gen_proto.sh
+# 3. Bootstrap (installs deps, generates gRPC stubs, copies guardian.yaml.example)
+bash install.sh
 
-# 4. Configure
-cp guardian.yaml.example guardian.yaml
-# Edit guardian.yaml — set your token from https://viriatosecurity.com
-
-# 5. Run (Phase 1 fake generator, dry-run mode)
-python -m agent.main --fake --dry-run --log-level DEBUG
+# 4. Run — no token required for fake + dry-run mode
+python3 -m agent.main --fake --dry-run --log-level DEBUG
 ```
 
 Press `Ctrl+C` to stop. Guardian flushes the in-flight batch and logs a shutdown summary.
+
+> **To send real events to the platform:** edit `guardian.yaml`, set `agent.token` to your token from [viriatosecurity.com](https://viriatosecurity.com), then run without `--fake` and `--dry-run`.
 
 ---
 
@@ -159,7 +220,7 @@ pip install -r requirements.txt
 python -m pytest tests/ -v
 ```
 
-All 63 tests should pass.
+All tests should pass.
 
 ---
 

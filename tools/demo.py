@@ -567,14 +567,14 @@ def scene_5() -> None:
     sleep(0.3)
     console.print(Panel(
         f"  [bold yellow]EventBatch[/bold yellow]\n"
-        f"  ┌─────────────────────────────────────┐\n"
-        f"  │  [white]63 signed events[/white]                    │\n"
-        f"  │  [grey50]chain tip:[/grey50] [grey70]{chain_tip}[/grey70]   │\n"
-        f"  └─────────────────────────────────────┘\n\n"
+        f"  ┌─────────────────────────────────────────────────────────────┐\n"
+        f"  │  [white]63 signed events[/white]                                           │\n"
+        f"  │  [grey50]chain tip:[/grey50] [grey70]{chain_tip}[/grey70]                               │\n"
+        f"  └─────────────────────────────────────────────────────────────┘\n\n"
         f"  [grey50]                   +[/grey50]\n\n"
-        f"  ┌─────────────────────────────────────┐\n"
-        f"  │  [grey50]API Token:[/grey50] [white]{token_masked}[/white]    │\n"
-        f"  └─────────────────────────────────────┘",
+        f"  ┌───────────────────────────────────────────────────────────────┐\n"
+        f"  │  [grey50]API Token:[/grey50] [white]{token_masked}[/white]                            │\n"
+        f"  └───────────────────────────────────────────────────────────────┘",
         title="[bold cyan]Signing Inputs[/bold cyan]",
         border_style="cyan",
         padding=(0, 2),
