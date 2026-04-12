@@ -99,14 +99,11 @@ Full technical docs live in [`docs/`](docs/README.md), covering architecture, da
 
 | I want to... | Go to |
 |---|---|
-| Understand what Guardian captures | [RawEvent Schema](docs/03-data/raw-event-schema.md) |
-| Understand the hash chain | [Signing & Chain of Custody](docs/04-security/signing.md) |
-| Configure watched processes | [guardian.yaml Reference](docs/12-reference/config-reference.md) |
-| Run without a real kernel | [Fake Event Generator](docs/05-components/generator.md) |
-| See the full pipeline | [Pipeline Walk-Through](docs/05-components/pipeline.md) |
-| Understand Phase 2 plans | [Roadmap](docs/07-phases/roadmap.md) |
-| Compare to Falco / auditd | [Alternatives](docs/11-alternatives/comparison.md) |
-| Deploy on Kubernetes | [Kubernetes Deployment](docs/09-operations/kubernetes.md) |
+| Understand what Guardian captures | [RawEvent Schema](docs/03-data/event-schema.md) |
+| Understand the hash chain | [Signing & Chain of Custody](docs/04-security/batch-signing.md) |
+| Configure watched processes | [guardian.yaml Reference](docs/12-reference/api-reference.md) |
+| Run without a real kernel | [Fake Event Generator](docs/05-components/event-generator.md) |
+| Compare to Falco / auditd | [Alternatives](docs/11-alternatives/alternatives-considered.md) |
 
 ---
 
